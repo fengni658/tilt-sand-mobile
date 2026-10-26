@@ -1,16 +1,42 @@
-# Tilt Sand Mobile
+# Tilt Sand · 掌心流沙
 
-An independent mobile-first tilt-controlled pixel-sand playground inspired by [PixelTilt](https://github.com/abcdmku/PixelTilt).
+手机优先的彩色像素沙实验。倾斜手机或拖动画布，1024 颗彩色沙粒随重力堆积流动。
 
-## Status
+**当前为网页/PWA 预览，不是 Android APK。** 目标先在 Android 浏览器确认效果，再决定原生包装。
 
-Initial development. A mobile browser preview is the first milestone; an Android package will be considered after preview feedback. No APK or production-readiness claim is made.
+## 功能
+- 64 × 64 LED 风格画布；固定 1,024 颗沙粒、三套原创配色。
+- 显式开启方向传感器；不支持、权限拒绝或无读数时保留触摸操作。
+- 拖动控制、键盘方向键、校准、暂停/恢复、重置。
+- 横竖屏坐标映射、安全区布局；后台停止仿真，回前台不累计时间跳跃。
+- PWA 安装与首次完整在线加载后的离线基本运行。无账号、无广告、无追踪、无外部运行时依赖。
 
-## Scope
+## 本地运行
+需要 Node.js 22 或更新版本。
 
-- Colorful pixel sand responding to device tilt
-- Explicit motion permission and touch fallback
-- Calibration, pause and reset
-- Responsive phone layout and offline support
+```sh
+npm ci --ignore-scripts
+npm run typecheck
+npm test
+npm run preview
+```
 
-This is not affiliated with the PixelTilt author. Third-party game assets and audio are not included. Source attribution and applicable licenses will accompany implementation.
+打开 `http://localhost:4173`。手机远程访问传感器需要 **HTTPS**；普通局域网 HTTP 地址只能作为触摸预览。开发后运行 `npm run build` 更新 `dist/`。
+
+## 部署
+将 `dist/` 内容部署到 HTTPS 静态站点。所有资源使用相对路径，支持仓库子目录部署。首次完整加载后，浏览器会缓存应用资源。更新时修改 `public/sw.js` 的缓存版本，避免旧资源长留。服务器须为 JS 返回 JavaScript MIME 类型。
+
+Android Chrome 可用浏览器菜单“安装应用/添加到主屏幕”。iOS Safari 需在用户点击按钮后允许方向访问。不同设备传感器支持和符号行为仍须真机确认。校准把当前姿态设为零重力，重置清除校准。触摸模式中松手保持重力方向；手机模式中触摸临时覆盖传感器，松手恢复。
+
+## 实现与边界
+`src/engine.ts` 为确定性离散格模型：每格最多一颗，按重力投影顺序更新，通过向下和侧滑候选形成沙堆。每步最多移动一格，强度控制步频。它能保持粒子数量与可重复性，但不模拟真实连续动量、陀螺旋转伪力或强烈摇晃喷溅。
+
+参考视频及 PixelTilt 的像素沙体验；已阅读官方 SAND 和 SANDII 实现。**本版不是官方 SANDII 的连续 PBD 算法移植，也不宣称逐帧或物理行为完全复刻。** 未使用官方或第三方美术、音频、商标资产。后续是否采用连续物理，应基于手机预览反馈决定。
+
+## 测试
+`npm test` 构建并执行：确定性、1024 粒子及身份守恒、四边界堆积、重置、暂停恢复、非法输入、屏幕方向坐标变换。`tests/browser_smoke.py` 使用 Playwright + Chromium 验证窄屏交互、权限失败、横屏、离线重载；需另行安装 Python Playwright 与 Chromium。
+
+当前浏览器端 QA 尚未完成，以上浏览器测试脚本不代表已通过验收。自动化模拟不等于真机验证。真实 Android 传感器、功耗和系统安装流程仍待手机验收。未生成或签名 APK。
+
+## 致谢与许可
+灵感来源：[PixelTilt](https://github.com/abcdmku/PixelTilt)，MIT，Copyright (c) 2026 PixelTilt contributors。保留完整许可见 [docs/PIXELTILT-LICENSE.txt](docs/PIXELTILT-LICENSE.txt)。实现参考记录见 [docs/REFERENCE.md](docs/REFERENCE.md)。本独立项目采用 MIT，非 PixelTilt 官方应用。

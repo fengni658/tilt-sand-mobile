@@ -1,0 +1,1 @@
+{"name":"tilt-sand-mobile","version":"0.1.0","private":true,"type":"module","scripts":{"dev":"node scripts/serve.mjs","build":"tsc && node scripts/build.mjs","typecheck":"tsc --noEmit","test":"npm run build && node --test tests/*.test.mjs","preview":"node scripts/serve.mjs dist"},"devDependencies":{"typescript":"5.9.3"}}
