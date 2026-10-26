@@ -36,7 +36,7 @@ Android Chrome 可用浏览器菜单“安装应用/添加到主屏幕”。iOS 
 ## 测试
 `npm test` 构建并执行：确定性、1024 粒子及身份守恒、四边界堆积、重置、暂停恢复、非法输入、屏幕方向坐标变换。`tests/browser_smoke.py` 使用 Playwright + Chromium 验证窄屏交互、权限失败、横屏、离线重载；需另行安装 Python Playwright 与 Chromium。
 
-当前浏览器端 QA 尚未完成，以上浏览器测试脚本不代表已通过验收。自动化模拟不等于真机验证。真实 Android 传感器、功耗和系统安装流程仍待手机验收。未生成或签名 APK。
+Codex 云独立验收已通过传感器拒绝/无接口/无读数降级、触摸校准、离线重载、后台隐藏模拟和 1024 粒子身份守恒。验收发现 P2 窄横屏画布裁切问题；已加入高度约束布局修复，但修复后的 640×360、844×390 横屏和 390×844、360×640 竖屏仍待独立复验。浏览器测试脚本新增画布完整可见性、浏览器触摸输入和控制台错误检查；脚本存在不代表已通过验收。自动化模拟不等于真机验证。真实 Android 传感器、功耗和系统安装流程仍待手机验收。未生成或签名 APK。
 
 ## 致谢与许可
 灵感来源：[PixelTilt](https://github.com/abcdmku/PixelTilt)，MIT，Copyright (c) 2026 PixelTilt contributors。保留完整许可见 [docs/PIXELTILT-LICENSE.txt](docs/PIXELTILT-LICENSE.txt)。实现参考记录见 [docs/REFERENCE.md](docs/REFERENCE.md)。本独立项目采用 MIT，非 PixelTilt 官方应用。
