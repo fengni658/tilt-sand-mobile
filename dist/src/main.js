@@ -3,7 +3,7 @@ const get = (id) => document.getElementById(id);
 const canvas = get('sand'), ctx = canvas.getContext('2d');
 const sim = new Sand();
 let gravity = { x: 0, y: 1 }, raw = { x: 0, y: 1 }, baseline = { x: 0, y: 0 };
-let sensorActive = false, pointer = null, last = 0, palette = 'spectrum', permissionEpoch = 0, sensorTimer = 0;
+let sensorActive = false, hasSensorReading = false, pointer = null, last = 0, palette = 'spectrum', permissionEpoch = 0, sensorTimer = 0;
 const status = (message) => get('status').textContent = message;
 const colors = [];
 function setColors() { for (let i = 0; i < 1024; i++) {
@@ -28,11 +28,11 @@ function frame(now) { if (!document.hidden) {
 document.addEventListener('visibilitychange', () => { last = 0; });
 function screenAngle() { return screen.orientation?.angle ?? Number(window.orientation ?? 0); }
 function onOrientation(e) { if (!sensorActive || e.beta === null || e.gamma === null || !Number.isFinite(e.beta) || !Number.isFinite(e.gamma))
-    return; clearTimeout(sensorTimer); raw = orientationGravity(e.beta, e.gamma, screenAngle()); if (pointer === null) {
+    return; clearTimeout(sensorTimer); hasSensorReading = true; raw = orientationGravity(e.beta, e.gamma, screenAngle()); if (pointer === null) {
     gravity = { x: gravity.x * .75 + (raw.x - baseline.x) * .25, y: gravity.y * .75 + (raw.y - baseline.y) * .25 };
 } status('倾斜已连接 · 缓慢转动手机，让沙粒流动'); get('mode').textContent = '手机传感器'; }
 window.addEventListener('deviceorientation', onOrientation);
-get('sensor').onclick = async () => { const button = get('sensor'); const epoch = ++permissionEpoch; button.disabled = true; status('正在请求动作与方向权限…'); try {
+get('sensor').onclick = async () => { const button = get('sensor'); const epoch = ++permissionEpoch; sensorActive = false; hasSensorReading = false; clearTimeout(sensorTimer); get('mode').textContent = '触摸控制'; button.disabled = true; status('正在请求动作与方向权限…'); try {
     if (!window.isSecureContext)
         throw new Error('需要 HTTPS 安全页面才能开启倾斜；当前可使用触摸。');
     if (typeof DeviceOrientationEvent === 'undefined')
@@ -43,11 +43,13 @@ get('sensor').onclick = async () => { const button = get('sensor'); const epoch 
     if (epoch !== permissionEpoch)
         return;
     sensorActive = true;
+    hasSensorReading = false;
     baseline = { x: 0, y: 0 };
     status('权限已就绪，正在等待传感器读数…');
     clearTimeout(sensorTimer);
     sensorTimer = window.setTimeout(() => { if (sensorActive) {
         sensorActive = false;
+        hasSensorReading = false;
         get('mode').textContent = '触摸控制';
         status('未收到传感器数据，请使用触摸，或换手机浏览器重试。');
     } }, 4000);
@@ -61,7 +63,7 @@ catch (error) {
 finally {
     button.disabled = false;
 } };
-get('touch').onclick = () => { permissionEpoch++; sensorActive = false; clearTimeout(sensorTimer); get('mode').textContent = '触摸控制'; status('触摸模式 · 拖动画布改变重力，松手后保持方向'); };
+get('touch').onclick = () => { permissionEpoch++; sensorActive = false; hasSensorReading = false; clearTimeout(sensorTimer); get('mode').textContent = '触摸控制'; status('触摸模式 · 拖动画布改变重力，松手后保持方向'); };
 function point(e) { const r = canvas.getBoundingClientRect(); gravity = { x: Math.max(-1, Math.min(1, (e.clientX - r.left - r.width / 2) / (r.width * .4))), y: Math.max(-1, Math.min(1, (e.clientY - r.top - r.height / 2) / (r.height * .4))) }; }
 canvas.onpointerdown = e => { if (pointer !== null)
     return; pointer = e.pointerId; canvas.setPointerCapture(pointer); point(e); };
@@ -81,7 +83,10 @@ canvas.onkeydown = e => { const vectors = { ArrowDown: { x: 0, y: 1 }, ArrowUp: 
 } };
 get('pause').onclick = () => { sim.paused = !sim.paused; get('pause').textContent = sim.paused ? '▶ 继续' : 'Ⅱ 暂停'; get('pause').setAttribute('aria-pressed', String(sim.paused)); };
 get('reset').onclick = () => { sim.reset(); baseline = { x: 0, y: 0 }; gravity = { x: 0, y: 1 }; status(sim.paused ? '沙粒已重置 · 当前仍暂停' : '沙粒与重力已重置'); draw(); };
-get('calibrate').onclick = () => { if (sensorActive) {
+get('calibrate').onclick = () => { if (sensorActive && !hasSensorReading) {
+    status('尚未收到传感器读数，暂不能校准；请稍候或使用触摸。');
+    return;
+} if (sensorActive) {
     baseline = { ...raw };
     gravity = { x: 0, y: 0 };
     status('当前姿态已设为零重力 · 向任意方向倾斜试试');
